@@ -35,8 +35,13 @@ def kernel_estimator(
     sorted_recal_Z = recal_Z[indices]
        
     dist_mat = base_kernel(pairwise_distances(test_Z/wid, sorted_recal_Z/wid))
+
+    # in case of zero weight everywhere, we use empirical quantile
+
+    dist_mat[dist_mat.sum(axis = 1) < 1e-6] = np.ones(dist_mat.shape[1])
      
     summation_matform = np.triu(np.ones((len(recal_Z), len(recal_Z))))
+
  
     aggregated_dist_mat = np.matmul(dist_mat, summation_matform)
 
@@ -116,18 +121,17 @@ def tau_to_quant_datasetCreate(
         Z: torch.Tensor,
         epsilon: torch.Tensor,
         quants,
-        kernel = lambda X : (norm(X, dim = 2) <= 1).type(torch.float),
+        kernel = lambda X : (X <= 1),
         wid = 1E-1
 ):
-    tauXsample = kernel_estimator(
-        test_Z = Z,
-        recal_Z = Z,
-        recal_epsilon = epsilon,
+    tauXsample = torch.Tensor(kernel_estimator(
+        test_Z = Z.cpu().numpy(),
+        recal_Z = Z.cpu().numpy(),
+        recal_epsilon = epsilon.cpu().numpy(),
         quants = quants,
         base_kernel = kernel,
-        lamb = 1,
         wid = wid
-        )
+        )).to(Z.device)
     sample_bed = tauXsample.reshape(-1)
     quant_bed = torch.Tensor(quants).view(-1, 1).repeat(1, len(Z)).view(-1).to(Z.device)
 
