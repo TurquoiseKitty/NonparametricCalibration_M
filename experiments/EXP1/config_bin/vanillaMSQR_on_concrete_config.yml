@@ -1,0 +1,63 @@
+aux_misc_info:
+  input_x_shape:
+  - 18540
+  - 9
+  input_y_shape:
+  - 18540
+  model_config:
+    device: cuda
+    hidden_layers:
+    - 10
+    - 5
+    n_input: 9
+    n_output: 1
+  model_init: vanillaMSQR
+  save_path_and_name: null
+  val_percentage: 0.1
+aux_train_config:
+  Decay: 0.0001
+  LR: 0.005
+  N_Epoch: 200
+  backdoor: null
+  bat_size: 1024
+  early_stopping: true
+  monitor_name: mse
+  patience: 20
+  train_loss: mse_loss
+  val_loss_criterias:
+    mse: mse_loss
+    rmse: rmse_loss
+  validate_times: 20
+  verbose: false
+base_misc_info:
+  input_x_shape:
+  - 927
+  - 8
+  input_y_shape:
+  - 927
+  model_config:
+    device: cuda
+    hidden_layers:
+    - 10
+    - 5
+    n_input: 8
+    n_output: 1
+  model_init: vanillaMSQR
+  save_path_and_name: null
+  val_percentage: 0.1
+base_train_config:
+  Decay: 0.0001
+  LR: 0.005
+  N_Epoch: 200
+  backdoor: null
+  bat_size: 10
+  early_stopping: true
+  monitor_name: mse
+  patience: 20
+  train_loss: mse_loss
+  val_loss_criterias:
+    mse: mse_loss
+    rmse: rmse_loss
+  validate_times: 20
+  verbose: false
+wid: 10

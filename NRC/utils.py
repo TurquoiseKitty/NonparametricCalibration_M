@@ -3,7 +3,8 @@ import numpy as np
 import torch
 from torch.linalg import norm
 from numpy.linalg import norm as npnorm
-
+import random
+import os
 
 
 normalZ = stats.norm(loc=0, scale = 1)
@@ -57,3 +58,15 @@ def mu_sig_toQuants(
     quant_ests = quants * sig + mu.view(1, -1).repeat(len(quantiles), 1)
 
     return quant_ests
+
+
+def seed_all(seed = 1234):
+
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False

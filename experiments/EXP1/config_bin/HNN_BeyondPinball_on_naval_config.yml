@@ -1,0 +1,42 @@
+harvestor:
+  early_stopped: false
+  early_stopping_epoch: 0
+  monitor_name: MACE
+  monitor_vals: []
+  training_losses: []
+  val_MACE: []
+  val_beyondPinBall: []
+  val_rmse: []
+misc_info:
+  input_x_shape:
+  - 10740
+  - 17
+  input_y_shape:
+  - 10740
+  model_config:
+    device: cuda
+    drop_rate: 0.0
+    hidden_layers:
+    - 10
+    - 5
+    n_input: 17
+    n_output: 2
+  model_init: HNN_BeyondPinball
+  save_path_and_name: null
+  val_percentage: 0.1
+training_config:
+  Decay: 0.0001
+  LR: 0.005
+  N_Epoch: 200
+  backdoor: null
+  bat_size: 10
+  early_stopping: true
+  monitor_name: beyondPinBall
+  patience: 20
+  train_loss: BeyondPinball_muSigma
+  val_loss_criterias:
+    MACE: MACE_muSigma
+    beyondPinBall: BeyondPinball_muSigma
+    rmse: rmse_loss
+  validate_times: 20
+  verbose: false

@@ -1,0 +1,1 @@
+In this experiment, we compare the models on the UCI8 dataset. We implement 4 variations of our algorithm, and compare with the benchmarks on 4 metrics. 
