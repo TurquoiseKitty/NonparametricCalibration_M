@@ -79,6 +79,11 @@ def DNN_Trainer(
 
     PREV_loss = 1E5
 
+    MIN_epoch = 0
+    MIN_loss = 1E5
+    # cache the state dict
+    state_dict_cache = None
+
     if early_stopping:
         patience_count = 0
 
@@ -130,6 +135,16 @@ def DNN_Trainer(
             
             if verbose:
                 print("epoch ", epoch)
+
+            cache_loss = val_loss_criterias[monitor_name](val_output, Y_val).item()
+
+            if cache_loss < MIN_loss:
+
+                MIN_loss = cache_loss
+                MIN_epoch = epoch
+
+                state_dict_cache = model.state_dict()
+            
             for name in val_loss_criterias.keys():
 
                 val_loss = val_loss_criterias[name](val_output, Y_val).item()
@@ -138,4 +153,11 @@ def DNN_Trainer(
 
                 if verbose:
                     print("     loss: {0}, {1}".format(name, val_loss))
+
+    # use the cached best model for validation
+    if state_dict_cache:
+        model.load_state_dict(state_dict_cache)
+
+        if verbose:
+            print("use cached model from epoch ",MIN_epoch)
 
