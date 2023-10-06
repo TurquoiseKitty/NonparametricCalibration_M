@@ -303,8 +303,6 @@ def MACE_muSigma(
     return MACE_Loss(y_quants, Y, q_list)
 
 
-
-
 def AGCE_Loss(
     y_out,
     Y,
@@ -346,7 +344,6 @@ def AGCE_Loss(
 
     return np.mean(score_per_trial)
 
-
 def AGCE_muSigma(
     y_out, Y, 
     ratio = 0.1,
@@ -370,3 +367,78 @@ def AGCE_muSigma(
         y_quants = mu_sig_toQuants(y_out[:,0], y_out[:, 1], quantiles = recal_model.predict(q_list))
 
     return AGCE_Loss(y_quants, Y, ratio, q_list, draw_with_replacement, num_trials, num_group_draws)
+
+
+def sharpness_90(
+    y_out,
+    Y,
+    q_list = np.linspace(0.01, 0.99, 100),
+):
+
+    # get 0.05 and 0.95
+
+
+
+    assert y_out.shape == (len(q_list), len(Y))
+
+    lower = y_out[4]
+
+    upper = y_out[-5]
+
+    
+    return torch.mean(upper - lower)
+
+
+def sharpness_90_muSigma(y_out, Y, recal = False, recal_model = None):
+
+    assert len(y_out) == len(Y)
+
+    assert y_out.shape == (len(y_out), 2)
+
+    q_list = np.array([0.05, 0.95])
+
+    if not recal:
+
+        y_quants = mu_sig_toQuants(y_out[:,0], y_out[:, 1], quantiles = q_list)
+
+    else:
+
+        y_quants = mu_sig_toQuants(y_out[:,0], y_out[:, 1], quantiles = recal_model.predict(q_list))
+
+    
+    return torch.mean(y_quants[1] - y_quants[0])
+
+def coverage_90(y_out, Y, q_list = np.linspace(0.01, 0.99, 100)):
+
+    assert y_out.shape == (len(q_list), len(Y))
+
+    lower = y_out[4]
+
+    upper = y_out[-5]
+
+    covered = ((Y < upper) & (Y > lower))
+    covered_rate = covered.float().sum() / len(Y)
+    return covered_rate
+
+
+
+
+def coverage_90_muSigma(y_out, Y, recal = False, recal_model = None):
+
+    assert len(y_out) == len(Y)
+
+    assert y_out.shape == (len(y_out), 2)
+
+    q_list = np.array([0.05, 0.95])
+
+    if not recal:
+
+        y_quants = mu_sig_toQuants(y_out[:,0], y_out[:, 1], quantiles = q_list)
+
+    else:
+
+        y_quants = mu_sig_toQuants(y_out[:,0], y_out[:, 1], quantiles = recal_model.predict(q_list))
+
+    covered = ((Y < y_quants[1]) & (Y > y_quants[0]))
+    covered_rate = covered.float().sum() / len(Y)
+    return covered_rate
