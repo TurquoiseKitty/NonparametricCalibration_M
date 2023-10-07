@@ -10,6 +10,10 @@ import copy
 import torch
 import numpy as np
 import pandas as pd
+from experiments.Conformal_Utils import OQR_helper as helper
+from experiments.Conformal_Utils.OQR_losses import batch_interval_loss
+from experiments.Conformal_Utils.OQR_q_model_ens import QModelEns
+from experiments.Conformal_Utils.OQRTrain import OQR_Trainer
 
 
 loss_NameDict = {
@@ -40,8 +44,8 @@ model_NameDict = {
     "DGP": oneLayer_DeepGP,
     "MMD": MC_dropnet,
     "MAQR": vanilla_predNet,
-    "CQR": None,
-    "OQR": None,
+    "CQR": QModelEns,
+    "OQR": QModelEns,
     "NRC": None, 
     "NRC-RF": None, 
     "NRC-RP": None, 
@@ -63,7 +67,7 @@ common_config = {
     "training_config": {
         "save_path_and_name": None,
         "LR": 5e-3,
-        "Decay": 1e-4,
+        "Decay": 1e-6,
         "N_Epoch": 2000,
         "backdoor": None,
         "bat_size": 16,
@@ -240,6 +244,48 @@ def config_customizer(modelname, n_input):
         configs["training_config"]["monitor_name"] = "mse"
 
         configs["wid"] = 10
+
+    elif modelname in ["CQR", "OQR"]:
+
+        backup_common = copy.deepcopy(common_config)
+
+        configs = {}
+
+        configs["model_config"] = {}
+        configs["training_config"] = {}
+
+        configs["model_config"]["input_size"] = n_input + 1
+        configs["model_config"]["output_size"] = 1
+        configs["model_config"]["hidden_size"] = backup_common["model_config"]["hidden_layers"][0]
+        configs["model_config"]["num_layers"] = len(backup_common["model_config"]["hidden_layers"])
+        configs["model_config"]["dropout"] = 0
+        configs["model_config"]["lr"] = backup_common["training_config"]["LR"]
+        configs["model_config"]["wd"] = backup_common["training_config"]["Decay"]
+        configs["model_config"]["num_ens"] = 1
+        configs["model_config"]["device"] = backup_common["model_config"]["device"]
+
+
+        base_model = model_NameDict[modelname](**configs["model_config"])
+
+
+        configs["training_config"] = backup_common["training_config"]
+
+        if modelname == "CQR":
+
+            configs["training_config"]["arg_corr_mult"] = 0
+
+        elif modelname == "OQR":
+
+            configs["training_config"]["arg_corr_mult"] = 0.5
+
+
+        configs["training_config"]["train_loss"] = batch_interval_loss
+        configs["training_config"]["val_loss_criterias"] = {
+                'batch_int' : batch_interval_loss,
+            }
+        configs["training_config"]["monitor_name"] = "batch_int"
+
+
         
     else:
 
@@ -307,7 +353,7 @@ def testPerform_customizer(test_X, test_Y, model_name, model, \
 
         MAQR_pred_eps = MAQR_pred_eps.reshape(len(quants), len(test_Y))
 
-        MAQR_test_mean = base_model(test_X)
+        MAQR_test_mean = model(test_X)
 
         pred_Y = MAQR_pred_eps + MAQR_test_mean.view(1,-1).repeat(len(MAQR_pred_eps),1)
 
@@ -325,24 +371,48 @@ def testPerform_customizer(test_X, test_Y, model_name, model, \
 
             ret[key] = real_err
 
+    elif model_name in ["CQR", "OQR"]:
+
+        quantiles = torch.Tensor(np.linspace(0.01,0.99,100))
+        test_preds = model.predict_q(
+            test_X, quantiles, ens_pred_type='conf',
+            recal_model=None, recal_type=None
+        )
+
+        test_preds = torch.permute(test_preds, (1,0))
+        
+        val_criterias = ["MACE_Loss", "AGCE_Loss", "CheckScore", "sharpness_90", "coverage_90"]
+
+        for key in val_criterias:
+
+            real_loss = loss_NameDict[key]
+
+            real_err = real_loss(test_preds, test_Y, q_list = np.linspace(0.01,0.99,100)).item()
+
+            if isinstance(real_err, torch.Tensor):
+
+                real_err = real_err.item()
+
+            ret[key] = real_err
+
 
     return ret
 
 
-if __name__ == "__main__":
+def run_benchmark():
 
     # ---------------------------configs for testing purpose---------------------------------#
-    common_config["training_config"]["verbose"] = True
-    common_config["training_config"]["N_Epoch"] = 10
-    common_config["training_config"]["validate_times"] = 5
+    # common_config["training_config"]["verbose"] = True
+    # common_config["training_config"]["N_Epoch"] = 10
+    # common_config["training_config"]["validate_times"] = 5
     # ---------------------------configs for testing purpose---------------------------------#
 
     big_df = {}
 
     dataset_path = "datasets/UCI_datasets"
 
-    # for dataname in ["boston", "concrete", "energy", "kin8nm","naval", "power", "wine", "yacht"]:
-    for dataname in ["boston"]:
+    for dataname in ["boston", "concrete", "energy", "kin8nm","naval", "power", "wine", "yacht"]:
+    # for dataname in ["boston"]:
 
         err_mu_dic = {}
         err_std_dic = {}
@@ -351,9 +421,8 @@ if __name__ == "__main__":
 
         (train_X_raw, train_Y_raw), (recal_X_raw, recal_Y_raw), (val_X, val_Y), (test_X, test_Y) = common_processor_UCI(x, y)
 
-        # for modelname in ["HNN", "MCDrop", "DeepEnsemble", "CCL", "ISR", "DGP", "MMD", "MAQR", "CQR", "OQR", "NRC", "NRC-RF", "NRC-RP", "NRC-Cov"]:
-        # for modelname in ["HNN", "MCDrop", "DeepEnsemble", "CCL", "ISR", "DGP", "MMD"]:
-        for modelname in ["MAQR"]:
+        for modelname in ["HNN", "MCDrop", "DeepEnsemble", "CCL", "ISR", "DGP", "MMD", "MAQR", "CQR", "OQR"]:
+
 
             seed_list = np.arange(5)
             
@@ -362,8 +431,7 @@ if __name__ == "__main__":
             # train base model
             print("model: "+ modelname +" on data: "+dataname)
 
-            # for k in range(5):
-            for k in range(1):
+            for k in range(5):
                 seed = seed_list[k]
                 seed_all(seed)
 
@@ -402,6 +470,10 @@ if __name__ == "__main__":
                 elif modelname in ["DGP"]:
 
                     DeepGP_Trainer(base_model, train_X, train_Y, val_X, val_Y, **configs["training_config"])
+
+                elif modelname in ["CQR", "OQR"]:
+
+                    OQR_Trainer(base_model, train_X, train_Y, val_X, val_Y, **configs["training_config"])
 
                 else:
 
@@ -484,6 +556,7 @@ if __name__ == "__main__":
 
         big_df[dataname +"_mu"] = list(err_mu_dic.values())
         big_df[dataname + "_std"] = list(err_std_dic.values())
+        
 
 
     df = pd.DataFrame.from_dict(big_df)  
