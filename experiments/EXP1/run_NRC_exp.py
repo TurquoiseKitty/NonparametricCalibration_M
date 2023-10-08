@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn import random_projection
+import time
 
 
 loss_NameDict = {
@@ -61,7 +62,7 @@ common_config = {
         "backdoor": None,
         "bat_size": 16,
         "early_stopping": True,
-        "patience": 200,
+        "patience": 50,
 
         "train_loss": mse_loss,
         "val_loss_criterias":{
@@ -171,12 +172,13 @@ def NRC_testPerform_customizer(test_X, test_Y, model_name, model, \
     return ret
 
 
-def run_NRC():
+def run_NRC(test_run = False):
 
     # ---------------------------configs for testing purpose---------------------------------#
+    if test_run:
     # common_config["training_config"]["verbose"] = True
-    # common_config["training_config"]["N_Epoch"] = 10
-    # common_config["training_config"]["validate_times"] = 5
+        common_config["training_config"]["N_Epoch"] = 10
+        common_config["training_config"]["validate_times"] = 5
     # ---------------------------configs for testing purpose---------------------------------#
 
     big_df = {}
@@ -202,6 +204,8 @@ def run_NRC():
 
             # train base model
             print("model: "+ modelname +" on data: "+dataname)
+
+            star = time.time()
 
             for k in range(5):
                 seed = seed_list[k]
@@ -310,6 +314,10 @@ def run_NRC():
                 err_mu_dic[key] = np.mean(crits_dic[key])
                 err_std_dic[key] = np.std(crits_dic[key])
 
+            end = time.time()
+
+            print("time spent: ", end - star)
+
 
         if len(big_df) == 0:
             big_df["idxes"] = list(err_mu_dic.keys())
@@ -327,7 +335,7 @@ def run_NRC():
 
 if __name__ == "__main__":
 
-    run_NRC()
+    run_NRC(False)
 
 
 

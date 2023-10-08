@@ -14,7 +14,7 @@ from experiments.Conformal_Utils import OQR_helper as helper
 from experiments.Conformal_Utils.OQR_losses import batch_interval_loss
 from experiments.Conformal_Utils.OQR_q_model_ens import QModelEns
 from experiments.Conformal_Utils.OQRTrain import OQR_Trainer
-
+import time
 
 loss_NameDict = {
     "mse_loss": mse_loss, 
@@ -73,7 +73,7 @@ common_config = {
         "bat_size": 16,
         "early_stopping": True,
         "monitor_name": None,
-        "patience": 200,
+        "patience": 50,
         "train_loss": None,
         "val_loss_criterias" : None,
         "monitor_name" : None,
@@ -399,12 +399,14 @@ def testPerform_customizer(test_X, test_Y, model_name, model, \
     return ret
 
 
-def run_benchmark():
+def run_benchmark(test_run = False):
 
     # ---------------------------configs for testing purpose---------------------------------#
+    if test_run:
+
     # common_config["training_config"]["verbose"] = True
-    # common_config["training_config"]["N_Epoch"] = 10
-    # common_config["training_config"]["validate_times"] = 5
+        common_config["training_config"]["N_Epoch"] = 10
+        common_config["training_config"]["validate_times"] = 5
     # ---------------------------configs for testing purpose---------------------------------#
 
     big_df = {}
@@ -430,6 +432,8 @@ def run_benchmark():
 
             # train base model
             print("model: "+ modelname +" on data: "+dataname)
+
+            star = time.time()
 
             for k in range(5):
                 seed = seed_list[k]
@@ -550,6 +554,10 @@ def run_benchmark():
                 err_mu_dic[key] = np.mean(crits_dic[key])
                 err_std_dic[key] = np.std(crits_dic[key])
 
+            end = time.time()
+
+            print("time spent:", end - star)
+
 
         if len(big_df) == 0:
             big_df["idxes"] = list(err_mu_dic.keys())
@@ -563,6 +571,12 @@ def run_benchmark():
 
     df.to_csv("experiments/EXP1/record_bin/EXP1_benchmarks.csv",index=False)
 
+    print("backed up!")
+
+
+if __name__ == "__main__":
+
+    run_benchmark(False)
 
 
 
