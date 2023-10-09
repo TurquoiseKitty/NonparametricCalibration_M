@@ -405,8 +405,8 @@ def run_benchmark(test_run = False):
     if test_run:
 
     # common_config["training_config"]["verbose"] = True
-        common_config["training_config"]["N_Epoch"] = 10
-        common_config["training_config"]["validate_times"] = 5
+        common_config["training_config"]["N_Epoch"] = 1
+        common_config["training_config"]["validate_times"] = 1
     # ---------------------------configs for testing purpose---------------------------------#
 
     big_df = {}
@@ -419,19 +419,13 @@ def run_benchmark(test_run = False):
                 
         seed = seed_list[k]
         seed_all(seed)
-    
-
-
-
-
-
-
 
         for dataname in ["boston", "concrete", "energy", "kin8nm","naval", "power", "wine", "yacht"]:
         # for dataname in ["boston"]:
 
-            err_mu_dic = {}
-            err_std_dic = {}
+            if dataname not in big_df.keys():
+
+                big_df[dataname] = {}
 
             x, y = get_uci_data(data_name= dataname, dir_name= dataset_path)
 
@@ -545,7 +539,7 @@ def run_benchmark(test_run = False):
                 record = testPerform_customizer(test_X, test_Y, model_name= modelname, model = base_model, \
                                                 aux_info = aux_info)
 
-                second_layer_id = modelname + "_w" + str(wid) +"_"
+                second_layer_id = modelname
 
                 for key in record.keys():
 
@@ -589,7 +583,7 @@ def run_benchmark(test_run = False):
 
 if __name__ == "__main__":
 
-    run_benchmark(False)
+    run_benchmark(True)
 
 
 
