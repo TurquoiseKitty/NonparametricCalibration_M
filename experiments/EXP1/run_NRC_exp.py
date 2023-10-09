@@ -177,39 +177,39 @@ def run_NRC(test_run = False):
     # ---------------------------configs for testing purpose---------------------------------#
     if test_run:
     # common_config["training_config"]["verbose"] = True
-        common_config["training_config"]["N_Epoch"] = 10
-        common_config["training_config"]["validate_times"] = 5
+        common_config["training_config"]["N_Epoch"] = 1
+        common_config["training_config"]["validate_times"] = 1
     # ---------------------------configs for testing purpose---------------------------------#
 
     big_df = {}
 
     dataset_path = "datasets/UCI_datasets"
 
-    for dataname in ["boston", "concrete", "energy", "kin8nm","naval", "power", "wine", "yacht"]:
-    # for dataname in ["boston"]:
+    seed_list = np.arange(5)
 
-        err_mu_dic = {}
-        err_std_dic = {}
+    for k in range(5):
+                
+        seed = seed_list[k]
+        seed_all(seed)
+    
 
-        x, y = get_uci_data(data_name= dataname, dir_name= dataset_path)
+        for dataname in ["boston", "concrete", "energy", "kin8nm","naval", "power", "wine", "yacht"]:
 
-        (train_X_raw, train_Y_raw), (recal_X_raw, recal_Y_raw), (val_X, val_Y), (test_X, test_Y) = common_processor_UCI(x, y)
+            if dataname not in big_df.keys():
 
-        for modelname in ["PureKernel","NRC", "NRC-RF", "NRC-RP", "NRC-Cov", "NRC-RF-RP"]:
+                big_df[dataname] = {}
 
 
-            seed_list = np.arange(5)
-            
-            crits_dic = {}
+            x, y = get_uci_data(data_name= dataname, dir_name= dataset_path)
 
-            # train base model
-            print("model: "+ modelname +" on data: "+dataname)
+            (train_X_raw, train_Y_raw), (recal_X_raw, recal_Y_raw), (val_X, val_Y), (test_X, test_Y) = common_processor_UCI(x, y)
 
-            star = time.time()
+            for modelname in ["PureKernel","NRC", "NRC-RF", "NRC-RP", "NRC-Cov", "NRC-RF-RP"]:
 
-            for k in range(5):
-                seed = seed_list[k]
-                seed_all(seed)
+                # train base model
+                print("model: "+ modelname +" on data: "+dataname)
+
+                star = time.time()
 
                 aux_info = {
                             "recal_X": recal_X_raw,
@@ -253,7 +253,7 @@ def run_NRC(test_run = False):
 
                 else:
 
-                    n_component = 5
+                    n_component = 4
 
                     if modelname in ["NRC-RP", "NRC-RF-RP"]:
 
@@ -298,36 +298,45 @@ def run_NRC(test_run = False):
                                                 aux_info = aux_info)
 
 
-
-                
-                    if k == 0:
-                        for key in record.keys():
-
-                            crits_dic[modelname + "_w" + str(wid) +"_"+key] = []
+                    second_layer_id = modelname + "_w" + str(wid) +"_"
 
                     for key in record.keys():
 
-                        crits_dic[modelname + "_w" + str(wid) +"_"+key].append(record[key])
+                        if second_layer_id+key not in big_df[dataname].keys():
+
+                            big_df[dataname][second_layer_id+key] = []
+
+                        big_df[dataname][second_layer_id+key].append(record[key])
 
 
-            for key in crits_dic.keys():
-                err_mu_dic[key] = np.mean(crits_dic[key])
-                err_std_dic[key] = np.std(crits_dic[key])
+                end = time.time()
 
-            end = time.time()
-
-            print("time spent: ", end - star)
+                print("time spent: ", end - star)
 
 
-        if len(big_df) == 0:
-            big_df["idxes"] = list(err_mu_dic.keys())
 
-        big_df[dataname +"_mu"] = list(err_mu_dic.values())
-        big_df[dataname + "_std"] = list(err_std_dic.values())
+    mu_sig_df = {}
+    for dataname in big_df.keys():
+
+        if len(mu_sig_df) == 0:
+
+            mu_sig_df['idxes'] = list(big_df[dataname].keys())
+
+        mu_hold_list = []
+        sig_hold_list = []
+
+        for crit in big_df[dataname].keys():
+
+            mu_hold_list.append(np.mean(big_df[dataname][crit]))
+            sig_hold_list.append(np.std(big_df[dataname][crit]))
+
+
+        mu_sig_df[dataname +"_mu"] = mu_hold_list
+        mu_sig_df[dataname + "_std"] = sig_hold_list
         
 
 
-    df = pd.DataFrame.from_dict(big_df)  
+    df = pd.DataFrame.from_dict(mu_sig_df)  
 
     df.to_csv("experiments/EXP1/record_bin/EXP1_NRCexperiments.csv",index=False)
 
