@@ -24,14 +24,16 @@ def normalize(data):
 
 
 
-def common_processor_UCI(x, y, tr_re_va_te = np.array([0.4, 0.4, 0.1, 0.1])):
+def common_processor_UCI(x, y, tr_re_va_te = np.array([0.4, 0.4, 0.1, 0.1]), normal = True):
 
     assert len(x.shape) == 2
     assert len(y.shape) == 1
     assert np.abs(np.sum(tr_re_va_te) - 1) < 1e-6
+
+    if normal:
  
-    x_normed, x_normalizer = normalize(x)
-    x = x_normed
+        x_normed, x_normalizer = normalize(x)
+        x = x_normed
 
     N_train, N_recal, N_val, N_test = (len(x) * tr_re_va_te).astype(int)
 
