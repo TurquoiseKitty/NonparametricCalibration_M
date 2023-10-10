@@ -64,7 +64,7 @@ common_config = {
         "Decay": 1e-6,
         "N_Epoch": 5000,
         "backdoor": None,
-        "bat_size": 1024,
+        "bat_size": 64,
         "early_stopping": True,
         "monitor_name": None,
         "patience": 100,
@@ -199,7 +199,7 @@ def config_customizer(modelname, n_input):
 
   
 
-def testPerform_customizer(test_X, test_Y, model_name, model, \
+def testPerform_customizer_light(test_X, test_Y, model_name, model, \
                             aux_info):
     
     ret = {}
@@ -214,7 +214,7 @@ def testPerform_customizer(test_X, test_Y, model_name, model, \
 
             real_loss = loss_NameDict[key]
 
-            real_err = real_loss(y_out, test_Y)
+            real_err = real_loss(y_out, test_Y, q_list = np.linspace(0.05,0.95,7), light=True)
 
             if isinstance(real_err, torch.Tensor):
 
@@ -232,7 +232,7 @@ def testPerform_customizer(test_X, test_Y, model_name, model, \
 
             real_loss = loss_NameDict[key]
             
-            real_err = real_loss(y_out, test_Y, recal = True, recal_model = aux_info["recal_model"])
+            real_err = real_loss(y_out, test_Y, recal = True, recal_model = aux_info["recal_model"], q_list = np.linspace(0.05,0.95,7), light=True)
 
             if isinstance(real_err, torch.Tensor):
 
@@ -243,7 +243,7 @@ def testPerform_customizer(test_X, test_Y, model_name, model, \
 
     elif model_name in ["CQR", "OQR"]:
 
-        quantiles = torch.Tensor(np.linspace(0.01,0.99,100))
+        quantiles = torch.Tensor(np.linspace(0.01,0.99,7))
         test_preds = model.predict_q(
             test_X, quantiles, ens_pred_type='conf',
             recal_model=None, recal_type=None
@@ -257,7 +257,7 @@ def testPerform_customizer(test_X, test_Y, model_name, model, \
 
             real_loss = loss_NameDict[key]
 
-            real_err = real_loss(test_preds, test_Y, q_list = np.linspace(0.01,0.99,100)).item()
+            real_err = real_loss(test_preds, test_Y, q_list = np.linspace(0.01,0.99,7), light = True).item()
 
             if isinstance(real_err, torch.Tensor):
 
@@ -290,7 +290,7 @@ def run_benchmark(test_run = False):
         seed = seed_list[k]
         seed_all(seed)
 
-        for dataname in  ['meps_19', 'meps_20', 'meps_21', 'facebook_1', 'facebook_2', 'blog_data']:
+        for dataname in  ['meps_19', 'meps_20', 'meps_21']:
 
             if dataname not in big_df.keys():
 
@@ -357,7 +357,7 @@ def run_benchmark(test_run = False):
 
                     aux_info["recal_model"] = ISR_recalibrator
 
-                record = testPerform_customizer(test_X, test_Y, model_name= modelname, model = base_model, \
+                record = testPerform_customizer_light(test_X, test_Y, model_name= modelname, model = base_model, \
                                                 aux_info = aux_info)
 
                 second_layer_id = modelname

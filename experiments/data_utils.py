@@ -24,11 +24,15 @@ def normalize(data):
 
 
 
-def common_processor_UCI(x, y, tr_re_va_te = np.array([0.4, 0.4, 0.1, 0.1]), normal = True):
+def common_processor_UCI(x, y, tr_re_va_te = np.array([0.4, 0.4, 0.1, 0.1]), normal = True, shrink = False):
 
     assert len(x.shape) == 2
     assert len(y.shape) == 1
     assert np.abs(np.sum(tr_re_va_te) - 1) < 1e-6
+
+    if shrink:
+
+        tr_re_va_te = np.array([0.7, 0.1, 0.1, 0.1])
 
     if normal:
  

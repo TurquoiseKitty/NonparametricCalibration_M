@@ -7,3 +7,5 @@ model_weights
 datasets
 
 .ipynb*
+
+record_processing

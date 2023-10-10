@@ -154,11 +154,15 @@ def avg_pinball_quantile(y_out, Y, q_list = np.array([0.2, 0.8]), light = False)
     return avg_pinball(y_pred_Plus_tau, Y.repeat(len(q_list)))
 
 
-def avg_pinball_muSigma(y_out, Y, q_list = np.linspace(0.01,0.99,100), recal=False, recal_model=None):
+def avg_pinball_muSigma(y_out, Y, q_list = np.linspace(0.01,0.99,100), recal=False, recal_model=None, light = False):
 
     assert len(y_out) == len(Y)
 
     assert y_out.shape == (len(y_out), 2)
+
+    if light:
+
+        assert len(q_list) == 7
 
     q_list_bed =  torch.Tensor(q_list).view(-1, 1).repeat(1, len(Y)).view(-1).to(y_out.device)
 
@@ -294,9 +298,13 @@ def MACE_Loss(
     return mace
 
 def MACE_muSigma(
-    y_out, Y, q_list = np.linspace(0.01,0.99,100), recal=False, recal_model = None
+    y_out, Y, q_list = np.linspace(0.01,0.99,100), recal=False, recal_model = None, light = False
 ):
     assert len(y_out) == len(Y)
+
+    if light:
+
+        assert len(q_list) == 7
 
     assert y_out.shape == (len(y_out), 2)
 
@@ -365,11 +373,16 @@ def AGCE_muSigma(
     num_trials: int = 1,
     num_group_draws: int = 10,
     recal=False,
-    recal_model = None
+    recal_model = None,
+    light = False
 ):
     assert len(y_out) == len(Y)
 
     assert y_out.shape == (len(y_out), 2)
+
+    if light:
+
+        assert len(q_list) == 7
 
     if not recal:
 
@@ -413,7 +426,7 @@ def sharpness_90(
     return torch.mean(upper - lower)
 
 
-def sharpness_90_muSigma(y_out, Y, recal = False, recal_model = None):
+def sharpness_90_muSigma(y_out, Y, recal = False, recal_model = None, q_list = np.linspace(0.01,0.99,100), light = False):
 
     assert len(y_out) == len(Y)
 
@@ -459,21 +472,21 @@ def coverage_90(y_out, Y, q_list = np.linspace(0.01, 0.99, 100), light = False):
 
 
 
-def coverage_90_muSigma(y_out, Y, recal = False, recal_model = None):
+def coverage_90_muSigma(y_out, Y, recal = False, recal_model = None, q_list = np.linspace(0.01,0.99,100), light = False):
 
     assert len(y_out) == len(Y)
 
     assert y_out.shape == (len(y_out), 2)
 
-    q_list = np.array([0.05, 0.95])
+    real_q_list = np.array([0.05, 0.95])
 
     if not recal:
 
-        y_quants = mu_sig_toQuants(y_out[:,0], y_out[:, 1], quantiles = q_list)
+        y_quants = mu_sig_toQuants(y_out[:,0], y_out[:, 1], quantiles = real_q_list)
 
     else:
 
-        y_quants = mu_sig_toQuants(y_out[:,0], y_out[:, 1], quantiles = recal_model.predict(q_list))
+        y_quants = mu_sig_toQuants(y_out[:,0], y_out[:, 1], quantiles = recal_model.predict(real_q_list))
 
     covered = ((Y < y_quants[1]) & (Y > y_quants[0]))
     covered_rate = covered.float().sum() / len(Y)

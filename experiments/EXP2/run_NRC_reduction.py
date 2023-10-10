@@ -130,9 +130,6 @@ def NRC_config_customizer(modelname, n_input):
             }
         configs["training_config"]["monitor_name"] = "batch_int"
 
-    else:
-
-        raise NotImplementedError
     
     return base_model, configs
 
@@ -273,7 +270,7 @@ def run_NRC(test_run = False):
         seed_all(seed)
     
 
-        for dataname in  ['meps_19', 'meps_20', 'meps_21', 'facebook_1', 'facebook_2', 'blog_data']:
+        for dataname in  ['meps_19', 'meps_20', 'meps_21']:
         # for dataname in  ['facebook_1', 'facebook_2']:
 
             if dataname not in big_df.keys():

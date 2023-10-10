@@ -68,12 +68,12 @@ common_config = {
         "save_path_and_name": None,
         "LR": 5e-3,
         "Decay": 1e-6,
-        "N_Epoch": 2000,
+        "N_Epoch": 500,
         "backdoor": None,
         "bat_size": 16,
         "early_stopping": True,
         "monitor_name": None,
-        "patience": 50,
+        "patience": 20,
         "train_loss": None,
         "val_loss_criterias" : None,
         "monitor_name" : None,
@@ -175,8 +175,8 @@ def config_customizer(modelname, n_input):
         base_model = model_NameDict["DGP"](**configs["model_config"])
 
         configs["training_config"]["LR"] = 1e-2
-        configs["training_config"]["N_Epoch"] = 200
-        configs["training_config"]["patience"] = 20
+        configs["training_config"]["N_Epoch"] = 100
+        configs["training_config"]["patience"] = 10
         configs["training_config"]["train_loss"] = mean_std_norm_loss
         configs["training_config"]["val_loss_criterias"] = {
             "nll" : mean_std_norm_loss,
@@ -431,7 +431,7 @@ def run_benchmark(test_run = False):
 
             x, y = get_uci_data(data_name= dataname, dir_name= dataset_path)
 
-            (train_X_raw, train_Y_raw), (recal_X_raw, recal_Y_raw), (val_X, val_Y), (test_X, test_Y) = common_processor_UCI(x, y)
+            (train_X_raw, train_Y_raw), (recal_X_raw, recal_Y_raw), (val_X, val_Y), (test_X, test_Y) = common_processor_UCI(x, y,shrink=True)
 
             for modelname in ["HNN", "MCDrop", "DeepEnsemble", "CCL", "ISR", "DGP", "MMD", "MAQR", "CQR", "OQR"]:
 
