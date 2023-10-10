@@ -130,12 +130,15 @@ def avg_pinball(y_pred_Plus_tau, Y):
     return loss
 
 
-def avg_pinball_quantile(y_out, Y, q_list = np.array([0.2, 0.8])):
+def avg_pinball_quantile(y_out, Y, q_list = np.array([0.2, 0.8]), light = False):
 
     # when the net predicts quantiles directly
 
-
     assert (y_out.shape == (len(Y), len(q_list))) or (y_out.shape == (len(q_list), len(Y)))
+
+    if light:
+
+        assert len(q_list) == 7
 
     q_list_bed =  torch.Tensor(q_list).view(-1, 1).repeat(1, len(Y)).view(-1).to(y_out.device)
 
@@ -273,10 +276,15 @@ def MACE_Loss(
     y_out,
     Y,
     q_list = np.linspace(0.01, 0.99, 100),
+    light = False
 ):
 
 
     assert y_out.shape == (len(q_list), len(Y))
+
+    if light:
+
+        assert len(q_list) == 7
 
     exp_quants, obs_quants = obs_vs_exp(Y, q_list, y_out)
 
@@ -311,10 +319,15 @@ def AGCE_Loss(
     q_list = np.linspace(0.01, 0.99, 100),
     draw_with_replacement: bool = False,
     num_trials: int = 1,
-    num_group_draws: int = 10
+    num_group_draws: int = 10,
+    light = False
 ):
 
     assert y_out.shape == (len(q_list), len(Y))
+
+    if light:
+
+        assert len(q_list) == 7
 
     num_pts = Y.shape[0]
      
@@ -373,17 +386,28 @@ def sharpness_90(
     y_out,
     Y,
     q_list = np.linspace(0.01, 0.99, 100),
+    light = False
 ):
 
     # get 0.05 and 0.95
 
-
-
     assert y_out.shape == (len(q_list), len(Y))
 
-    lower = y_out[4]
+    if light:
+        
+        assert len(q_list) == 7
 
-    upper = y_out[-5]
+        lower = y_out[0]
+
+        upper = y_out[-1]
+
+    else:
+
+        assert len(q_list) == 100
+
+        lower = y_out[4]
+
+        upper = y_out[-5]
 
     
     return torch.mean(upper - lower)
@@ -408,13 +432,25 @@ def sharpness_90_muSigma(y_out, Y, recal = False, recal_model = None):
     
     return torch.mean(y_quants[1] - y_quants[0])
 
-def coverage_90(y_out, Y, q_list = np.linspace(0.01, 0.99, 100)):
+def coverage_90(y_out, Y, q_list = np.linspace(0.01, 0.99, 100), light = False):
 
     assert y_out.shape == (len(q_list), len(Y))
 
-    lower = y_out[4]
+    if light:
+        
+        assert len(q_list) == 7
 
-    upper = y_out[-5]
+        lower = y_out[0]
+
+        upper = y_out[-1]
+
+    else:
+
+        assert len(q_list) == 100
+
+        lower = y_out[4]
+
+        upper = y_out[-5]
 
     covered = ((Y < upper) & (Y > lower))
     covered_rate = covered.float().sum() / len(Y)

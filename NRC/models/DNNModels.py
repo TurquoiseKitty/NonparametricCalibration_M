@@ -128,6 +128,21 @@ class vanilla_predNet(raw_net):
 
 
         return torch.cat(mus, dim=-1)
+    
+    def feature_layer(self, 
+                x: np.array):
+        
+        x = torch.Tensor(x).to(self.device)
+
+        for m in self.raw_model:
+
+            x = m(x)
+
+        return x.detach().cpu().numpy()
+        
+
+
+
 
 
 class quantile_predNet(vanilla_predNet):

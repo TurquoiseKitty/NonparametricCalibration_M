@@ -4,7 +4,6 @@ import numpy as np
 from scipy import stats
 import six
 sys.modules['sklearn.externals.six'] = six
-from skgarden import RandomForestQuantileRegressor
 from torch.utils.data import TensorDataset
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
@@ -324,29 +323,6 @@ def wsc_unbiased(X, y, y_upper, y_lower, delta=0.1, M=1000, test_size=0.75, rand
     # Estimate coverage
     coverage = wsc_vab(X_test, y_test, y_upper_test, y_lower_test, v_star, a_star, b_star)
     return coverage
-
-
-def run_tree_experiment(x_train, y_train, x_test, y_test, unscaled_x_train, unscaled_x_test, data_type,
-                        minority_group_uncertainty, group_feature, args, s, d):
-    rfqr = RandomForestQuantileRegressor(
-        random_state=s, min_samples_leaf=40, n_estimators=200, n_jobs=-1)
-    rfqr.fit(x_train.cpu(), y_train.cpu().flatten())
-    y_upper = torch.Tensor(rfqr.predict(x_test.cpu(), quantile=95)).to(args.device)
-    y_lower = torch.Tensor(rfqr.predict(x_test.cpu(), quantile=5)).to(args.device)
-    train_y_upper = torch.Tensor(rfqr.predict(x_train.cpu(), quantile=95)).to(args.device)
-    train_y_lower = torch.Tensor(rfqr.predict(x_train.cpu(), quantile=5)).to(args.device)
-    save_results(d, data_type, x_train, unscaled_x_train, x_test, unscaled_x_test, y_train.squeeze(),
-                 y_test.squeeze(),
-                 y_upper,
-                 y_lower,
-                 train_y_upper,
-                 train_y_lower,
-                 s,
-                 args,
-                 minority_group_uncertainty=minority_group_uncertainty,
-                 group_feature=group_feature)
-
-
 
 
 def calculate_test_results(x_test, y_test, y_upper, y_lower):

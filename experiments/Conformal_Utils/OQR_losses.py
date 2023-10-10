@@ -1,5 +1,5 @@
 import torch
-from OQR_helper import compute_coverages_and_avg_interval_len, pearsons_corr2d, HSIC
+from experiments.Conformal_Utils.OQR_helper import compute_coverages_and_avg_interval_len, pearsons_corr2d, HSIC
 
 
 
