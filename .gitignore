@@ -9,3 +9,7 @@ datasets
 .ipynb*
 
 record_processing
+
+*.csv
+
+*.xlsx

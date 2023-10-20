@@ -288,7 +288,7 @@ def run_benchmark(test_run = False):
     for k in range(5):
                 
         seed = seed_list[k]
-        seed_all(seed)
+        seed_all(1234 + seed)
 
         for dataname in  ['meps_19', 'meps_20', 'meps_21']:
 

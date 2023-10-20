@@ -190,7 +190,7 @@ def run_NRC(test_run = False):
     for k in range(5):
                 
         seed = seed_list[k]
-        seed_all(seed)
+        seed_all(1234 + seed)
     
 
         for dataname in ["boston", "concrete", "energy", "kin8nm","naval", "power", "wine", "yacht"]:
